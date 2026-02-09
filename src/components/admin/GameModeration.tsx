@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Game, BulkOperations } from '../../types/game';
+import { Game } from '../../types/game';
 import { Button } from '../common/Button';
 import { useAdminActions } from '../../hooks/useAdminActions';
 import { formatRelativeTime, truncateText } from '../../utils/helpers';
@@ -34,7 +34,7 @@ export function GameModeration({ games, onGamesUpdated }: GameModerationProps) {
   const handleBulkAction = async () => {
     if (selectedGameIds.length === 0) return;
 
-    const operation: BulkOperations = {
+    const operation = {
       selectedGameIds,
       action: bulkAction
     };

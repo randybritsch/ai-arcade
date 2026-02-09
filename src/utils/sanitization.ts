@@ -88,7 +88,7 @@ export function sanitizeAuthor(author: string): string {
  * @returns Sanitized object
  */
 export function deepSanitize<T extends Record<string, any>>(obj: T): T {
-  const sanitized = { ...obj };
+  const sanitized: any = { ...obj };
   
   Object.keys(sanitized).forEach(key => {
     const value = sanitized[key];
@@ -102,7 +102,7 @@ export function deepSanitize<T extends Record<string, any>>(obj: T): T {
     }
   });
   
-  return sanitized;
+  return sanitized as T;
 }
 
 /**
