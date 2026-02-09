@@ -7,14 +7,14 @@ const localStorageMock = {
   removeItem: jest.fn(),
   clear: jest.fn(),
 };
-global.localStorage = localStorageMock as any;
+(global as any).localStorage = localStorageMock;
 
 // Mock URL.createObjectURL
-global.URL.createObjectURL = jest.fn(() => 'mocked-url');
-global.URL.revokeObjectURL = jest.fn();
+(global as any).URL.createObjectURL = jest.fn(() => 'mocked-url');
+(global as any).URL.revokeObjectURL = jest.fn();
 
 // Mock window.open
-global.open = jest.fn();
+(global as any).open = jest.fn();
 
 // Mock clipboard API
 Object.assign(navigator, {
@@ -26,5 +26,5 @@ Object.assign(navigator, {
 // Reset mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();
-  localStorage.clear();
+  localStorageMock.clear();
 });
