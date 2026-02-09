@@ -783,20 +783,25 @@
 
 .submit-guidelines,
 .submit-tips {
-  background: var(--color-white);
+  background: linear-gradient(135deg, rgba(15, 52, 96, 0.8) 0%, rgba(26, 26, 46, 0.9) 100%);
   padding: var(--space-6);
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  border: 2px solid var(--color-secondary);
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.4);
+  backdrop-filter: blur(5px);
 }
 
 .submit-guidelines h2,
 .submit-tips h3 {
   margin-bottom: var(--space-4);
+  color: var(--color-secondary);
+  text-shadow: var(--glow-secondary);
 }
 
 .submit-guidelines ul {
   padding-left: var(--space-5);
-  line-height: 1.6;
+  line-height: 1.8;
+  color: var(--color-gray-500);
 }
 
 .submit-guidelines li {
@@ -804,7 +809,8 @@
 }
 
 .submit-guidelines li strong {
-  color: var(--color-gray-900);
+  color: var(--color-primary);
+  text-shadow: 0 0 5px rgba(255, 0, 255, 0.5);
 }
 
 .tips-grid {
@@ -814,26 +820,38 @@
 
 .tip-item {
   padding: var(--space-4);
-  background: var(--color-gray-50);
+  background: rgba(15, 52, 96, 0.5);
+  border: 2px solid var(--color-primary);
   border-radius: var(--border-radius);
+  transition: all var(--transition-fast);
+}
+
+.tip-item:hover {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 15px rgba(255, 255, 0, 0.4);
+  transform: translateY(-2px);
 }
 
 .tip-item h4 {
   margin-bottom: var(--space-2);
-  color: var(--color-primary);
+  color: var(--color-accent);
+  text-shadow: var(--glow-accent);
 }
 
 .tip-item p {
   font-size: var(--text-sm);
   line-height: 1.5;
   margin: 0;
+  color: var(--color-gray-500);
 }
 
 .submit-form-container {
-  background: var(--color-white);
+  background: linear-gradient(135deg, rgba(15, 52, 96, 0.8) 0%, rgba(26, 26, 46, 0.9) 100%);
   padding: var(--space-8);
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-sm);
+  border: 3px solid var(--color-primary);
+  box-shadow: 0 0 30px rgba(255, 0, 255, 0.6), 0 0 60px rgba(0, 255, 255, 0.3);
+  backdrop-filter: blur(5px);
 }
 
 /* Game Submission Form Specific */
@@ -852,7 +870,7 @@
 }
 
 .form-header p {
-  color: var(--color-gray-600);
+  color: var(--color-gray-500);
 }
 
 .url-validation {
@@ -922,15 +940,16 @@
   top: var(--space-20);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--color-white);
-  border: var(--border-width) solid var(--color-accent);
+  background: linear-gradient(135deg, rgba(15, 52, 96, 0.98) 0%, rgba(26, 26, 46, 0.98) 100%);
+  border: 3px solid var(--color-success);
   border-radius: var(--border-radius-lg);
-  box-shadow: var(--shadow-xl);
+  box-shadow: 0 0 40px rgba(0, 255, 136, 0.8), 0 0 80px rgba(0, 255, 136, 0.4);
   padding: var(--space-6);
   max-width: 500px;
   width: 90%;
   z-index: 50;
   animation: slideIn 0.3s ease-out;
+  backdrop-filter: blur(10px);
 }
 
 @keyframes slideIn {
@@ -950,12 +969,13 @@
 
 .success-content h2 {
   margin-bottom: var(--space-3);
-  color: var(--color-accent);
+  color: var(--color-success);
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.4);
 }
 
 .success-content p {
   margin-bottom: var(--space-6);
-  color: var(--color-gray-700);
+  color: var(--color-gray-500);
 }
 
 .success-actions {
