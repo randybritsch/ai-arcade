@@ -1,13 +1,14 @@
 import { Game } from '../types/game';
-import { STORAGE_KEYS, APP_CONFIG } from '../utils/constants';
+import { APP_CONFIG } from '../utils/constants';
 import { URLValidator } from './urlValidator';
 import { v4 as uuidv4 } from 'uuid';
+import { supabase } from '../lib/supabase';
 
 export class GameStorage {
   /**
-   * Save a new game to localStorage
+   * Save a new game to Supabase
    * @param game Game object to save
-   * @throws Error if storage quota exceeded or validation fails
+   * @throws Error if validation fails or database error
    */
   static async save(game: Omit<Game, 'id' | 'submittedAt' | 'playCount'>): Promise<void> {
     // Validate URL before saving
@@ -17,40 +18,48 @@ export class GameStorage {
     }
 
     // Create complete game object
-    const newGame: Game = {
+    const newGame = {
       id: uuidv4(),
       title: game.title.trim(),
       url: validation.normalizedUrl!,
-      description: game.description?.trim(),
-      author: game.author?.trim(),
+      description: game.description?.trim() || null,
+      author: game.author?.trim() || null,
       tags: game.tags.map(tag => tag.trim()).filter(Boolean),
-      submittedAt: new Date().toISOString(),
+      submitted_at: new Date().toISOString(),
       featured: false,
-      playCount: 0,
-      status: 'active'
+      play_count: 0,
+      status: 'active' as const
     };
 
-    const existingGames = await this.getAll();
-    const updatedGames = [...existingGames, newGame];
+    const { error } = await supabase
+      .from('games')
+      .insert([newGame]);
 
-    await this.saveGames(updatedGames);
+    if (error) {
+      throw new Error(`Failed to save game: ${error.message}`);
+    }
   }
 
   /**
-   * Retrieve all games from localStorage
+   * Retrieve all games from Supabase
    * @returns Promise resolving to array of games
    */
   static async getAll(): Promise<Game[]> {
     try {
-      const data = localStorage.getItem(STORAGE_KEYS.GAMES);
-      if (!data) {
+      const { data, error } = await supabase
+        .from('games')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading games from database:', error);
         return [];
       }
 
-      const games = JSON.parse(data) as Game[];
-      return Array.isArray(games) ? games : [];
+      // Transform snake_case to camelCase
+      return (data || []).map(this.transformFromDb);
     } catch (error) {
-      console.error('Error loading games from storage:', error);
+      console.error('Error loading games from database:', error);
       return [];
     }
   }
@@ -61,8 +70,17 @@ export class GameStorage {
    * @returns Promise resolving to game or null if not found
    */
   static async getById(id: string): Promise<Game | null> {
-    const games = await this.getAll();
-    return games.find(game => game.id === id) || null;
+    const { data, error } = await supabase
+      .from('games')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return this.transformFromDb(data);
   }
 
   /**
@@ -71,13 +89,6 @@ export class GameStorage {
    * @param updates Partial game object with updates
    */
   static async update(id: string, updates: Partial<Game>): Promise<void> {
-    const games = await this.getAll();
-    const gameIndex = games.findIndex(game => game.id === id);
-    
-    if (gameIndex === -1) {
-      throw new Error('Game not found');
-    }
-
     // Validate URL if it's being updated
     if (updates.url) {
       const validation = URLValidator.validate(updates.url);
@@ -87,8 +98,25 @@ export class GameStorage {
       updates.url = validation.normalizedUrl;
     }
 
-    games[gameIndex] = { ...games[gameIndex], ...updates };
-    await this.saveGames(games);
+    // Transform camelCase to snake_case for database
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.url !== undefined) dbUpdates.url = updates.url;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.author !== undefined) dbUpdates.author = updates.author;
+    if (updates.tags !== undefined) dbUpdates.tags = updates.tags;
+    if (updates.featured !== undefined) dbUpdates.featured = updates.featured;
+    if (updates.playCount !== undefined) dbUpdates.play_count = updates.playCount;
+    if (updates.status !== undefined) dbUpdates.status = updates.status;
+
+    const { error } = await supabase
+      .from('games')
+      .update(dbUpdates)
+      .eq('id', id);
+    
+    if (error) {
+      throw new Error(`Failed to update game: ${error.message}`);
+    }
   }
 
   /**
@@ -96,17 +124,28 @@ export class GameStorage {
    * @param id Game ID to delete
    */
   static async delete(id: string): Promise<void> {
-    const games = await this.getAll();
-    const filteredGames = games.filter(game => game.id !== id);
-    await this.saveGames(filteredGames);
+    const { error } = await supabase
+      .from('games')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      throw new Error(`Failed to delete game: ${error.message}`);
+    }
   }
 
   /**
-   * Clear all games from storage
+   * Clear all games from storage (use with caution!)
    */
   static async clear(): Promise<void> {
-    localStorage.removeItem(STORAGE_KEYS.GAMES);
-    localStorage.removeItem(STORAGE_KEYS.APP_STATE);
+    const { error } = await supabase
+      .from('games')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
+
+    if (error) {
+      throw new Error(`Failed to clear games: ${error.message}`);
+    }
   }
 
   /**
@@ -142,7 +181,27 @@ export class GameStorage {
         }
       }
 
-      await this.saveGames(importData.games);
+      // Transform to database format
+      const dbGames = importData.games.map((game: Game) => ({
+        id: game.id,
+        title: game.title,
+        url: game.url,
+        description: game.description || null,
+        author: game.author || null,
+        tags: game.tags,
+        submitted_at: game.submittedAt,
+        featured: game.featured,
+        play_count: game.playCount,
+        status: game.status
+      }));
+
+      const { error } = await supabase
+        .from('games')
+        .insert(dbGames);
+
+      if (error) {
+        throw new Error(`Import failed: ${error.message}`);
+      }
     } catch (error) {
       throw new Error(`Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
@@ -153,9 +212,14 @@ export class GameStorage {
    * @param id Game ID to increment play count
    */
   static async incrementPlayCount(id: string): Promise<void> {
-    const game = await this.getById(id);
-    if (game) {
-      await this.update(id, { playCount: game.playCount + 1 });
+    const { error } = await supabase.rpc('increment_play_count', { game_id: id });
+
+    if (error) {
+      // Fallback to manual increment if RPC doesn't exist
+      const game = await this.getById(id);
+      if (game) {
+        await this.update(id, { playCount: game.playCount + 1 });
+      }
     }
   }
 
@@ -170,68 +234,62 @@ export class GameStorage {
     featured?: boolean;
     status?: 'active' | 'hidden' | 'all';
   }): Promise<Game[]> {
-    const games = await this.getAll();
-    
-    return games.filter(game => {
-      // Status filter
-      if (filters.status && filters.status !== 'all' && game.status !== filters.status) {
-        return false;
-      }
+    let query = supabase.from('games').select('*');
 
-      // Featured filter
-      if (filters.featured !== undefined && game.featured !== filters.featured) {
-        return false;
-      }
+    // Status filter
+    if (filters.status && filters.status !== 'all') {
+      query = query.eq('status', filters.status);
+    }
 
-      // Search term filter (title, description, author)
-      if (filters.searchTerm) {
-        const searchLower = filters.searchTerm.toLowerCase();
+    // Featured filter
+    if (filters.featured !== undefined) {
+      query = query.eq('featured', filters.featured);
+    }
+
+    // Tags filter (PostgreSQL array contains)
+    if (filters.tags && filters.tags.length > 0) {
+      query = query.contains('tags', filters.tags);
+    }
+
+    const { data, error } = await query.order('submitted_at', { ascending: false });
+
+    if (error) {
+      console.error('Error filtering games:', error);
+      return [];
+    }
+
+    let games = (data || []).map(this.transformFromDb);
+
+    // Search term filter (client-side for flexibility)
+    if (filters.searchTerm) {
+      const searchLower = filters.searchTerm.toLowerCase();
+      games = games.filter(game => {
         const matchesTitle = game.title.toLowerCase().includes(searchLower);
         const matchesDescription = game.description?.toLowerCase().includes(searchLower) || false;
         const matchesAuthor = game.author?.toLowerCase().includes(searchLower) || false;
-        
-        if (!matchesTitle && !matchesDescription && !matchesAuthor) {
-          return false;
-        }
-      }
+        return matchesTitle || matchesDescription || matchesAuthor;
+      });
+    }
 
-      // Tags filter
-      if (filters.tags && filters.tags.length > 0) {
-        const hasMatchingTag = filters.tags.some(filterTag =>
-          game.tags.some(gameTag => 
-            gameTag.toLowerCase().includes(filterTag.toLowerCase())
-          )
-        );
-        if (!hasMatchingTag) {
-          return false;
-        }
-      }
-
-      return true;
-    });
+    return games;
   }
 
   /**
-   * Private helper to save games array to localStorage
-   * @param games Games array to save
+   * Transform database row to Game object (snake_case to camelCase)
    */
-  private static async saveGames(games: Game[]): Promise<void> {
-    try {
-      // Check storage quota
-      const dataString = JSON.stringify(games);
-      const sizeInBytes = new Blob([dataString]).size;
-      
-      if (sizeInBytes > APP_CONFIG.LOCAL_STORAGE_QUOTA_WARNING) {
-        console.warn('Approaching localStorage quota limit');
-      }
-
-      localStorage.setItem(STORAGE_KEYS.GAMES, dataString);
-    } catch (error) {
-      if (error instanceof Error && error.name === 'QuotaExceededError') {
-        throw new Error('Storage quota exceeded. Please clear some games or export your data.');
-      }
-      throw new Error('Failed to save games to storage');
-    }
+  private static transformFromDb(row: any): Game {
+    return {
+      id: row.id,
+      title: row.title,
+      url: row.url,
+      description: row.description || undefined,
+      author: row.author || undefined,
+      tags: row.tags || [],
+      submittedAt: row.submitted_at,
+      featured: row.featured,
+      playCount: row.play_count,
+      status: row.status
+    };
   }
 
   /**
