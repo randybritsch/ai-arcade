@@ -168,6 +168,7 @@
   height: 100%;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   transition: left 0.5s;
+  pointer-events: none;
 }
 
 .featured-game-card:hover::before {
@@ -316,6 +317,7 @@
     rgba(255, 255, 255, 0.05) 20px,
     rgba(255, 255, 255, 0.05) 40px
   );
+  pointer-events: none;
 }
 
 .cta-content h2 {
@@ -498,6 +500,7 @@
   mask-composite: exclude;
   opacity: 0;
   transition: opacity var(--transition-normal);
+  pointer-events: none;
 }
 
 .game-card:hover {
