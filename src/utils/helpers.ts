@@ -162,9 +162,16 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * Generate a random color for tags
  */
 export function generateTagColor(tag: string): string {
+  // Vibrant neon arcade colors
   const colors = [
-    '#3B82F6', '#EF4444', '#10B981', '#F59E0B',
-    '#8B5CF6', '#06B6D4', '#F97316', '#84CC16'
+    '#FF00FF', // Neon Magenta
+    '#00FFFF', // Neon Cyan
+    '#FFFF00', // Neon Yellow
+    '#FF0055', // Neon Red
+    '#00FF88', // Neon Green
+    '#FF9500', // Neon Orange
+    '#9D4EDD', // Purple
+    '#FF66FF'  // Pink
   ];
   
   // Use tag content to consistently generate same color
