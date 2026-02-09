@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Game } from '../../types/game';
 import { Button } from '../common/Button';
 import { Modal } from '../common/Modal';
@@ -21,10 +21,30 @@ export function GamePlayer({
   const [iframeLoaded, setIframeLoaded] = useState(false);
   const [iframeError, setIframeError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [loadTimeout, setLoadTimeout] = useState(false);
+
+  useEffect(() => {
+    // Reset states when modal opens
+    if (isOpen) {
+      setIframeLoaded(false);
+      setIframeError(false);
+      setLoadTimeout(false);
+      
+      // Set a timeout to detect if iframe fails to load
+      const timer = setTimeout(() => {
+        if (!iframeLoaded) {
+          setLoadTimeout(true);
+        }
+      }, 5000); // 5 second timeout
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, iframeLoaded]);
 
   const handleIframeLoad = () => {
     setIframeLoaded(true);
     setIframeError(false);
+    setLoadTimeout(false);
     // Increment play count when iframe loads successfully
     if (onPlayCountIncrement) {
       onPlayCountIncrement(game.id);
@@ -55,15 +75,20 @@ export function GamePlayer({
 
   const domain = URLValidator.extractDomain(game.url);
   const isGameDomain = URLValidator.isGameUrl(game.url);
+  const showError = iframeError || loadTimeout;
 
   const footer = (
     <div className="player-footer">
       <div className="player-actions">
+        <Button 
+          variant="primary" 
+          onClick={handleOpenInNewTab}
+          title="Open game in a new browser tab"
+        >
+          Open in New Tab
+        </Button>
         <Button variant="ghost" onClick={handleCopyUrl}>
           {copied ? 'Copied!' : 'Copy URL'}
-        </Button>
-        <Button variant="secondary" onClick={handleOpenInNewTab}>
-          Open in New Tab
         </Button>
         <Button variant="ghost" onClick={onClose}>
           Close
@@ -122,27 +147,35 @@ export function GamePlayer({
             </div>
           )}
           
+          {showError && (
+            <div className="embed-blocked-warning" style={{
+              padding: '20px',
+              marginBottom: '20px',
+              backgroundColor: '#fff3cd',
+              border: '1px solid #ffc107',
+              borderRadius: '8px',
+              textAlign: 'center'
+            }}>
+              <h3 style={{ marginTop: 0 }}>⚠️ Cannot Display Game Here</h3>
+              <p>
+                This website ({domain}) prevents embedding in iframes for security reasons.
+              </p>
+              <p style={{ marginBottom: '15px' }}>
+                <strong>Click "Open in New Tab" button below to play the game.</strong>
+              </p>
+              <Button variant="primary" onClick={handleOpenInNewTab} size="lg">
+                Open in New Tab to Play
+              </Button>
+            </div>
+          )}
+          
           <div className="iframe-container">
-            {!iframeLoaded && !iframeError && (
+            {!iframeLoaded && !showError && (
               <div className="iframe-loading">
                 <p>Loading game...</p>
-              </div>
-            )}
-            
-            {iframeError && (
-              <div className="iframe-error">
-                <h3>Unable to load game</h3>
-                <p>
-                  The game couldn't be loaded in an iframe. This might be due to:
+                <p style={{ fontSize: '0.9em', color: '#666', marginTop: '10px' }}>
+                  If the game doesn't load, click "Open in New Tab" below.
                 </p>
-                <ul>
-                  <li>The website prevents embedding</li>
-                  <li>The URL is not accessible</li>
-                  <li>Security restrictions</li>
-                </ul>
-                <Button variant="primary" onClick={handleOpenInNewTab}>
-                  Open in New Tab Instead
-                </Button>
               </div>
             )}
             
@@ -155,7 +188,7 @@ export function GamePlayer({
               sandbox="allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation"
               loading="lazy"
               style={{ 
-                display: iframeError ? 'none' : 'block',
+                display: showError ? 'none' : 'block',
                 width: '100%',
                 height: '600px',
                 border: 'none',
