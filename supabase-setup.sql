@@ -1,6 +1,19 @@
 -- AI Arcade Games Table
 -- Run this SQL in your Supabase SQL Editor to create the games table
 
+-- ============================================
+-- CLEANUP: Drop existing tables if needed
+-- ============================================
+-- Run this section first if you want to start fresh and drop existing tables
+-- Uncomment the lines below to drop everything:
+
+-- DROP FUNCTION IF EXISTS public.increment_play_count(UUID);
+-- DROP TABLE IF EXISTS public.games CASCADE;
+
+-- ============================================
+-- CREATE TABLE
+-- ============================================
+
 -- Create the games table
 CREATE TABLE IF NOT EXISTS public.games (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

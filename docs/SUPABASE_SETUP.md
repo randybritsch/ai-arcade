@@ -29,12 +29,33 @@ VITE_SUPABASE_ANON_KEY=your-anon-key-here
 
 ### 3. Create the Games Table
 
+#### Option A: Starting Fresh (Recommended if you have existing tables)
+
+If you already have tables in Supabase that you want to remove:
+
 1. Go to your Supabase project dashboard
 2. Click on **SQL Editor** in the left sidebar
 3. Click **New Query**
+4. Run this cleanup script first:
+
+```sql
+-- Drop existing tables and functions
+DROP FUNCTION IF EXISTS public.increment_play_count(UUID);
+DROP TABLE IF EXISTS public.games CASCADE;
+```
+
+5. Click **Run** to execute
+6. Now proceed to Option B below
+
+#### Option B: Run the Full Setup Script
+
+1. Go to your Supabase project dashboard (if not already there)
+2. Click on **SQL Editor** in the left sidebar
+3. Click **New Query**
 4. Copy the contents of `supabase-setup.sql` from the root directory
-5. Paste into the SQL Editor
-6. Click **Run** to execute the script
+5. If you want to start completely fresh, **uncomment** the DROP statements at the top of the file
+6. Paste into the SQL Editor
+7. Click **Run** to execute the script
 
 This will:
 - Create the `games` table with proper schema
@@ -100,6 +121,18 @@ The setup script enables RLS with permissive policies:
 **Note:** For a production app, you may want to restrict update/delete operations to authenticated users or admins.
 
 ## Troubleshooting
+
+### Need to start over?
+
+If you want to completely reset your database:
+
+```sql
+-- Drop everything and start fresh
+DROP FUNCTION IF EXISTS public.increment_play_count(UUID);
+DROP TABLE IF EXISTS public.games CASCADE;
+```
+
+Then re-run the full `supabase-setup.sql` script.
 
 ### "Missing Supabase environment variables" error
 - Ensure `.env.local` exists in the root directory
