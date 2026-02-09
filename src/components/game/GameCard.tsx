@@ -27,14 +27,15 @@ export function GameCard({
   const [showFullDescription, setShowFullDescription] = useState(false);
   const { incrementPlayCount } = useGameStorage();
 
-  const handlePlay = async () => {
-    await incrementPlayCount(game.id);
+  const handlePlay = () => {
+    // Open modal/window first (synchronous to avoid popup blocker)
     if (onPlay) {
       onPlay(game);
     } else {
-      // Default behavior: open in new tab
       window.open(game.url, '_blank', 'noopener,noreferrer');
     }
+    // Then increment play count asynchronously
+    incrementPlayCount(game.id);
   };
 
   const handleCopyUrl = async () => {

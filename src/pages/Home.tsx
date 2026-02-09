@@ -96,7 +96,9 @@ export function Home() {
                 </div>
                 <Button 
                   variant="primary"
-                  onClick={() => window.open(game.url, '_blank', 'noopener,noreferrer')}
+                  onClick={() => {
+                    window.open(game.url, '_blank', 'noopener,noreferrer');
+                  }}
                 >
                   Play Now
                 </Button>
@@ -134,7 +136,9 @@ export function Home() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => window.open(game.url, '_blank', 'noopener,noreferrer')}
+                    onClick={() => {
+                      window.open(game.url, '_blank', 'noopener,noreferrer');
+                    }}
                   >
                     Play
                   </Button>
